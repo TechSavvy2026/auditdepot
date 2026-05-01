@@ -106,7 +106,7 @@ export default function RfpDetail() {
         total_value_cents: totalValue,
         platform_fee_cents: platformFee,
         platform_fee_pct: platformFeePct,
-        status: "draft",
+        status: "pending_signature",
       });
       if (e4) throw e4;
 

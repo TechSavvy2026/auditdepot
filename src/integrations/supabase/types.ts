@@ -461,6 +461,7 @@ export type Database = {
           firm_id: string
           id: string
           paid_at: string | null
+          paid_by: string | null
           pdf_url: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           stripe_invoice_id: string | null
@@ -475,6 +476,7 @@ export type Database = {
           firm_id: string
           id?: string
           paid_at?: string | null
+          paid_by?: string | null
           pdf_url?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           stripe_invoice_id?: string | null
@@ -489,6 +491,7 @@ export type Database = {
           firm_id?: string
           id?: string
           paid_at?: string | null
+          paid_by?: string | null
           pdf_url?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           stripe_invoice_id?: string | null
@@ -499,7 +502,7 @@ export type Database = {
           {
             foreignKeyName: "invoices_contract_id_fkey"
             columns: ["contract_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
@@ -677,6 +680,8 @@ export type Database = {
         | "active"
         | "expired"
         | "terminated"
+        | "completed"
+        | "pending_signature"
       entity_type:
         | "local_government"
         | "nonprofit"
@@ -686,7 +691,7 @@ export type Database = {
         | "housing_authority"
         | "transit_authority"
         | "other"
-      invoice_status: "draft" | "sent" | "paid" | "overdue" | "void"
+      invoice_status: "draft" | "sent" | "paid" | "overdue" | "void" | "pending"
       rfp_status:
         | "draft"
         | "open"
@@ -846,6 +851,8 @@ export const Constants = {
         "active",
         "expired",
         "terminated",
+        "completed",
+        "pending_signature",
       ],
       entity_type: [
         "local_government",
@@ -857,7 +864,7 @@ export const Constants = {
         "transit_authority",
         "other",
       ],
-      invoice_status: ["draft", "sent", "paid", "overdue", "void"],
+      invoice_status: ["draft", "sent", "paid", "overdue", "void", "pending"],
       rfp_status: [
         "draft",
         "open",

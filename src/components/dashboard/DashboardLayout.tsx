@@ -21,7 +21,8 @@ export interface DashboardContext {
 }
 
 const Ctx = createContext<DashboardContext | null>(null);
-export function useDashboard() {
+
+export function useDashboard(): DashboardContext {
   const v = useContext(Ctx);
   if (!v) throw new Error("useDashboard outside layout");
   return v;

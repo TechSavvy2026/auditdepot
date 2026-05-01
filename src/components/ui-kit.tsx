@@ -35,11 +35,12 @@ export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
   );
 }
 
-type Variant = "blue" | "green" | "amber" | "red" | "purple" | "gray";
+type Variant = "blue" | "green" | "amber" | "orange" | "red" | "purple" | "gray";
 const badgeColors: Record<Variant, string> = {
   blue: "bg-blue-50 text-blue-700",
   green: "bg-green-50 text-green-700",
   amber: "bg-amber-50 text-amber-700",
+  orange: "bg-orange-50 text-orange-700",
   red: "bg-red-50 text-red-700",
   purple: "bg-purple-50 text-purple-700",
   gray: "bg-gray-100 text-gray-600",
@@ -69,10 +70,12 @@ export function rfpStatusBadge(status: string) {
 export function contractStatusBadge(status: string) {
   const map: Record<string, { label: string; variant: Variant }> = {
     draft: { label: "Draft", variant: "gray" },
+    pending_signature: { label: "Awaiting Signature", variant: "amber" },
     pending_govt_sig: { label: "Awaiting client", variant: "amber" },
     pending_firm_sig: { label: "Awaiting auditor", variant: "amber" },
     fully_executed: { label: "Executed", variant: "green" },
     active: { label: "Active", variant: "blue" },
+    completed: { label: "Completed", variant: "green" },
     expired: { label: "Expired", variant: "gray" },
     terminated: { label: "Terminated", variant: "red" },
   };
@@ -80,14 +83,23 @@ export function contractStatusBadge(status: string) {
   return <StatusBadge variant={cfg.variant}>{cfg.label}</StatusBadge>;
 }
 
-export function invoiceStatusBadge(status: string) {
+export function isInvoiceOverdue(status: string, dueDate: string | null | undefined): boolean {
+  if (!dueDate) return false;
+  if (status !== "pending" && status !== "outstanding" && status !== "sent") return false;
+  return new Date(dueDate).getTime() < Date.now();
+}
+
+export function invoiceStatusBadge(status: string, dueDate?: string | null) {
+  const effective = isInvoiceOverdue(status, dueDate) ? "overdue" : status;
   const map: Record<string, { label: string; variant: Variant }> = {
     draft: { label: "Draft", variant: "gray" },
-    sent: { label: "Sent", variant: "blue" },
+    pending: { label: "Outstanding", variant: "orange" },
+    outstanding: { label: "Outstanding", variant: "orange" },
+    sent: { label: "Outstanding", variant: "orange" },
     paid: { label: "Paid", variant: "green" },
     overdue: { label: "Overdue", variant: "red" },
     void: { label: "Void", variant: "gray" },
   };
-  const cfg = map[status] ?? { label: status, variant: "gray" as Variant };
+  const cfg = map[effective] ?? { label: effective, variant: "gray" as Variant };
   return <StatusBadge variant={cfg.variant}>{cfg.label}</StatusBadge>;
 }

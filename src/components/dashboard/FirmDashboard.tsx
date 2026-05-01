@@ -12,25 +12,28 @@ export default function FirmDashboard() {
   const [bids, setBids] = useState<any[]>([]);
   const [matchingRfps, setMatchingRfps] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
 
   useEffect(() => {
     if (!firm) { setLoading(false); return; }
     (async () => {
       const { data: lic } = await supabase.from("firm_licenses").select("*").eq("firm_id", firm.id);
       const licensedStates = (lic ?? []).map((l) => l.state);
-      const [bidRes, rfpRes, invRes] = await Promise.all([
+      const [bidRes, rfpRes, invRes, conRes] = await Promise.all([
         supabase.from("bids").select("*, rfp:rfps(id, title, status, state, bid_deadline, contract_term_years, entity:entities(name))")
           .eq("firm_id", firm.id).order("submitted_at", { ascending: false }).limit(5),
         supabase.from("rfps").select("*, entity:entities(name, entity_type), bids(id)")
           .in("state", licensedStates.length ? licensedStates : ["__none__"])
           .in("status", ["open", "closing_soon"])
           .order("created_at", { ascending: false }).limit(5),
-        supabase.from("invoices").select("*").eq("firm_id", firm.id).in("status", ["sent", "overdue"]).limit(3),
+        supabase.from("invoices").select("*").eq("firm_id", firm.id),
+        supabase.from("contracts").select("id, status").eq("firm_id", firm.id),
       ]);
       setLicenses(lic ?? []);
       setBids(bidRes.data ?? []);
       setMatchingRfps(rfpRes.data ?? []);
       setInvoices(invRes.data ?? []);
+      setContracts(conRes.data ?? []);
       setLoading(false);
     })();
   }, [firm]);
@@ -50,7 +53,12 @@ export default function FirmDashboard() {
 
   const licensedStates = licenses.map((l) => l.state);
   const activeBids = bids.filter((b) => ["submitted", "under_review", "shortlisted"].includes(b.status)).length;
-  const totalFeesDue = invoices.reduce((s, i) => s + Number(i.amount_cents), 0);
+  const outstandingInvoicesList = invoices.filter((i) => i.status !== "paid");
+  const paidInvoicesList = invoices.filter((i) => i.status === "paid");
+  const totalFeesDue = outstandingInvoicesList.reduce((s, i) => s + Number(i.amount_cents), 0);
+  const totalPaidRevenue = paidInvoicesList.reduce((s, i) => s + Number(i.amount_cents), 0);
+  const activeContracts = contracts.filter((c) => c.status === "active").length;
+  const awaitingSig = contracts.filter((c) => ["pending_signature", "pending_firm_sig", "pending_govt_sig"].includes(c.status)).length;
 
   return (
     <div>
@@ -75,7 +83,7 @@ export default function FirmDashboard() {
             <div className="text-xs text-amber-700 mt-0.5">Your firm is pending license verification. Verified firms can bid on RFPs.</div>
           </div>
         )}
-        {invoices.length > 0 && (
+        {outstandingInvoicesList.length > 0 && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
             <div>
               <div className="font-medium text-amber-800 text-sm">Outstanding invoice — {formatCurrency(totalFeesDue)} due</div>
@@ -84,11 +92,13 @@ export default function FirmDashboard() {
             <Link to="/dashboard/invoices" className="btn-primary text-xs px-3 py-1.5">View invoices →</Link>
           </div>
         )}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard label="Active bids" value={activeBids} color="blue" />
-          <StatCard label="States licensed" value={licensedStates.length} color="purple" />
+          <StatCard label="Active contracts" value={activeContracts} color="purple" />
           <StatCard label="Matching open RFPs" value={matchingRfps.length} color="green" />
-          <StatCard label="Invoices outstanding" value={invoices.length} color={invoices.length ? "amber" : "gray"} />
+          <StatCard label="Outstanding invoices" value={outstandingInvoicesList.length} color={outstandingInvoicesList.length ? "amber" : "gray"} />
+          <StatCard label="Paid invoices" value={paidInvoicesList.length} color="green" />
+          <StatCard label="Total paid revenue" value={formatCurrency(totalPaidRevenue)} color="purple" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card">

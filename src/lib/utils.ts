@@ -61,9 +61,10 @@ export const RFP_STATUS_LABELS: Record<string, string> = {
 };
 
 export const CONTRACT_STATUS_LABELS: Record<string, string> = {
-  draft: "Draft", pending_govt_sig: "Awaiting Client Signature",
+  draft: "Draft", pending_signature: "Awaiting Signature",
+  pending_govt_sig: "Awaiting Client Signature",
   pending_firm_sig: "Awaiting Auditor Signature", fully_executed: "Fully Executed",
-  active: "Active", expired: "Expired", terminated: "Terminated",
+  active: "Active", completed: "Completed", expired: "Expired", terminated: "Terminated",
 };
 
 export function formatCurrency(cents: number | null | undefined): string {

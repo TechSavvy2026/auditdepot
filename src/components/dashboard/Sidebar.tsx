@@ -30,6 +30,7 @@ const entityLinks = [
   { href: "/dashboard/rfps/new", label: "Post RFP" },
   { href: "/dashboard/rfps", label: "My RFPs" },
   { href: "/dashboard/contracts", label: "Contracts" },
+  { href: "/dashboard/invoices", label: "Invoices" },
   { href: "/dashboard/profile", label: "Profile" },
 ];
 const firmLinks = [

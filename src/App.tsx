@@ -14,6 +14,9 @@ import NewRfp from "./pages/dashboard/NewRfp.tsx";
 import RfpDetail from "./pages/dashboard/RfpDetail.tsx";
 import MyBids from "./pages/dashboard/MyBids.tsx";
 import BrowseRfps from "./pages/dashboard/BrowseRfps.tsx";
+import Contracts from "./pages/dashboard/Contracts.tsx";
+import ContractDetail from "./pages/dashboard/ContractDetail.tsx";
+import Invoices from "./pages/dashboard/Invoices.tsx";
 import ComingSoon from "./components/dashboard/ComingSoon.tsx";
 
 const queryClient = new QueryClient();
@@ -38,9 +41,9 @@ const App = () => (
             <Route path="browse" element={<BrowseRfps />} />
             <Route path="browse/:id" element={<RfpDetail />} />
             <Route path="bids" element={<MyBids />} />
-            <Route path="contracts" element={<ComingSoon title="Contracts" />} />
-            <Route path="contracts/:id" element={<ComingSoon title="Contract details" />} />
-            <Route path="invoices" element={<ComingSoon title="Invoices" />} />
+            <Route path="contracts" element={<Contracts />} />
+            <Route path="contracts/:id" element={<ContractDetail />} />
+            <Route path="invoices" element={<Invoices />} />
             <Route path="profile" element={<ComingSoon title="Profile" />} />
             <Route path="firm-profile" element={<ComingSoon title="Firm profile" />} />
             <Route path="admin/firms" element={<ComingSoon title="Audit firms (admin)" />} />

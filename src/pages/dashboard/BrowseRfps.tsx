@@ -10,17 +10,19 @@ export default function BrowseRfps() {
   const [loading, setLoading] = useState(true);
   const [rfps, setRfps] = useState<any[]>([]);
   const [licenses, setLicenses] = useState<string[]>([]);
+  const [myBidRfpIds, setMyBidRfpIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
       let licensedStates: string[] = [];
       if (firm) {
-        const { data: lic } = await supabase
-          .from("firm_licenses")
-          .select("state")
-          .eq("firm_id", firm.id);
+        const [{ data: lic }, { data: firmBids }] = await Promise.all([
+          supabase.from("firm_licenses").select("state").eq("firm_id", firm.id),
+          supabase.from("bids").select("rfp_id").eq("firm_id", firm.id),
+        ]);
         licensedStates = (lic ?? []).map((l) => l.state);
         setLicenses(licensedStates);
+        setMyBidRfpIds(new Set((firmBids ?? []).map((b) => b.rfp_id)));
       }
 
       let query = supabase
@@ -71,6 +73,7 @@ export default function BrowseRfps() {
             {rfps.map((rfp) => {
               const ent = Array.isArray(rfp.entity) ? rfp.entity[0] : rfp.entity;
               const bidCount = rfp.bids?.length ?? 0;
+              const alreadyBid = myBidRfpIds.has(rfp.id);
               return (
                 <Link
                   key={rfp.id}
@@ -95,7 +98,11 @@ export default function BrowseRfps() {
                         <span>{ent?.name ?? ""}</span>
                       </div>
                     </div>
-                    <span className="btn-primary text-xs px-3 py-1.5 flex-shrink-0">Bid →</span>
+                    {alreadyBid ? (
+                      <span className="text-xs px-3 py-1.5 flex-shrink-0 rounded-lg bg-gray-100 text-gray-500 font-medium">Bid submitted ✓</span>
+                    ) : (
+                      <span className="btn-primary text-xs px-3 py-1.5 flex-shrink-0">Bid →</span>
+                    )}
                   </div>
                 </Link>
               );

@@ -10,18 +10,21 @@ export default function EntityDashboard() {
   const [loading, setLoading] = useState(true);
   const [rfps, setRfps] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
 
   useEffect(() => {
     if (!entity) { setLoading(false); return; }
     (async () => {
-      const [rfpRes, conRes] = await Promise.all([
+      const [rfpRes, conRes, invRes] = await Promise.all([
         supabase.from("rfps").select("*, bids(id)").eq("entity_id", entity.id).order("created_at", { ascending: false }).limit(5),
         supabase.from("contracts").select("*, firm:firms(name)").eq("entity_id", entity.id)
-          .in("status", ["active", "pending_govt_sig", "pending_firm_sig", "fully_executed"])
+          .in("status", ["active", "pending_signature", "pending_govt_sig", "pending_firm_sig", "fully_executed"])
           .order("created_at", { ascending: false }).limit(3),
+        supabase.from("invoices").select("id, status, contract:contracts!inner(entity_id)").eq("contract.entity_id", entity.id),
       ]);
       setRfps(rfpRes.data ?? []);
       setContracts(conRes.data ?? []);
+      setInvoices(invRes.data ?? []);
       setLoading(false);
     })();
   }, [entity]);
@@ -41,8 +44,10 @@ export default function EntityDashboard() {
 
   const openRfps = rfps.filter((r) => r.status === "open" || r.status === "closing_soon").length;
   const totalBids = rfps.reduce((s, r) => s + (r.bids?.length ?? 0), 0);
-  const pendingSig = contracts.filter((c) => c.status === "pending_govt_sig").length;
+  const pendingSig = contracts.filter((c) => c.status === "pending_signature" || c.status === "pending_govt_sig").length;
   const activeContracts = contracts.filter((c) => c.status === "active").length;
+  const outstandingInvoices = invoices.filter((i) => i.status !== "paid").length;
+  const paidInvoices = invoices.filter((i) => i.status === "paid").length;
 
   return (
     <div>
@@ -61,11 +66,13 @@ export default function EntityDashboard() {
             <Link to="/dashboard/contracts" className="btn-primary text-xs px-3 py-1.5">Sign now →</Link>
           </div>
         )}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard label="Open RFPs" value={openRfps} color="blue" />
           <StatCard label="Bids received" value={totalBids} color="green" />
           <StatCard label="Active contracts" value={activeContracts} color="purple" />
           <StatCard label="Awaiting signature" value={pendingSig} color={pendingSig > 0 ? "amber" : "gray"} />
+          <StatCard label="Outstanding invoices" value={outstandingInvoices} color={outstandingInvoices > 0 ? "amber" : "gray"} />
+          <StatCard label="Paid invoices" value={paidInvoices} color="green" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card">
