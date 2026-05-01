@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX IF NOT EXISTS idx_bids_rfp_firm_unique ON public.bids (rfp_id, firm_id);

@@ -1,1 +1,0 @@
-ALTER TYPE invoice_status ADD VALUE 'pending';
