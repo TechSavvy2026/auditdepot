@@ -17,6 +17,7 @@ import BrowseRfps from "./pages/dashboard/BrowseRfps.tsx";
 import Contracts from "./pages/dashboard/Contracts.tsx";
 import ContractDetail from "./pages/dashboard/ContractDetail.tsx";
 import Invoices from "./pages/dashboard/Invoices.tsx";
+import Profile from "./pages/dashboard/Profile.tsx";
 import ComingSoon from "./components/dashboard/ComingSoon.tsx";
 
 const queryClient = new QueryClient();
@@ -44,8 +45,8 @@ const App = () => (
             <Route path="contracts" element={<Contracts />} />
             <Route path="contracts/:id" element={<ContractDetail />} />
             <Route path="invoices" element={<Invoices />} />
-            <Route path="profile" element={<ComingSoon title="Profile" />} />
-            <Route path="firm-profile" element={<ComingSoon title="Firm profile" />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="firm-profile" element={<Profile />} />
             <Route path="admin/firms" element={<ComingSoon title="Audit firms (admin)" />} />
             <Route path="admin/billing" element={<ComingSoon title="Billing (admin)" />} />
           </Route>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { US_STATES, ENTITY_TYPE_LABELS } from "@/lib/utils";
+import { US_STATES, ENTITY_TYPE_LABELS, AUDIT_TYPE_LABELS } from "@/lib/utils";
 
 type Role = "entity" | "firm";
 
@@ -51,6 +51,13 @@ export default function CompleteSetupPage() {
   const [firmState, setFirmState] = useState("");
   const [licenseNum, setLicenseNum] = useState("");
   const [firmEmail, setFirmEmail] = useState("");
+  const [firmContactName, setFirmContactName] = useState("");
+  const [selectedAuditTypes, setSelectedAuditTypes] = useState<string[]>([]);
+  const [selectedEntityTypes, setSelectedEntityTypes] = useState<string[]>([]);
+
+  function toggle(list: string[], setList: (v: string[]) => void, value: string) {
+    setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -128,6 +135,17 @@ export default function CompleteSetupPage() {
       const user = sessionData.session?.user;
       if (!user) throw new Error("Your session expired. Please sign in again.");
 
+      // Always sync profile full_name from this form (trigger only seeds it from signup metadata)
+      if (fullName.trim()) {
+        await withRetry(async () => {
+          const { error } = await supabase
+            .from("profiles")
+            .update({ full_name: fullName.trim() })
+            .eq("id", user.id);
+          if (error) throw error;
+        });
+      }
+
       if (role === "entity") {
         await withRetry(async () => {
           const { error } = await supabase.from("entities").insert({
@@ -142,6 +160,7 @@ export default function CompleteSetupPage() {
           if (error) throw error;
         });
       } else {
+        const contactNameForFirm = (firmContactName || fullName).trim();
         const firm = await withRetry(async () => {
           const { data, error } = await supabase
             .from("firms")
@@ -150,7 +169,7 @@ export default function CompleteSetupPage() {
               name: firmName,
               state: firmState,
               contact_email: firmEmail || email,
-              contact_name: fullName,
+              contact_name: contactNameForFirm,
             })
             .select()
             .single();
@@ -164,6 +183,22 @@ export default function CompleteSetupPage() {
               state: firmState,
               license_num: licenseNum,
             });
+            if (error) throw error;
+          });
+        }
+        if (selectedAuditTypes.length > 0) {
+          await withRetry(async () => {
+            const { error } = await supabase
+              .from("firm_audit_types")
+              .insert(selectedAuditTypes.map((t) => ({ firm_id: firm.id, audit_type: t as any })));
+            if (error) throw error;
+          });
+        }
+        if (selectedEntityTypes.length > 0) {
+          await withRetry(async () => {
+            const { error } = await supabase
+              .from("firm_entity_types")
+              .insert(selectedEntityTypes.map((t) => ({ firm_id: firm.id, entity_type: t as any })));
             if (error) throw error;
           });
         }
@@ -199,6 +234,10 @@ export default function CompleteSetupPage() {
           {role === "entity" ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <h3 className="font-medium">Tell us about your organization</h3>
+              <div>
+                <label className="label">Your full name</label>
+                <input className="input" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Smith" required />
+              </div>
               <div>
                 <label className="label">Organization name</label>
                 <input className="input" type="text" value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="City of Atlanta" required />
@@ -260,9 +299,49 @@ export default function CompleteSetupPage() {
                   <input className="input" type="text" value={licenseNum} onChange={(e) => setLicenseNum(e.target.value)} placeholder="PA-001234" />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Your full name</label>
+                  <input className="input" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Smith" required />
+                </div>
+                <div>
+                  <label className="label">Firm contact name</label>
+                  <input className="input" type="text" value={firmContactName} onChange={(e) => setFirmContactName(e.target.value)} placeholder="(defaults to your name)" />
+                </div>
+              </div>
               <div>
                 <label className="label">Firm contact email</label>
                 <input className="input" type="email" value={firmEmail} onChange={(e) => setFirmEmail(e.target.value)} placeholder="contact@yourfirm.com" />
+              </div>
+              <div>
+                <label className="label">Audit services offered</label>
+                <div className="grid grid-cols-1 gap-1.5 mt-1">
+                  {Object.entries(AUDIT_TYPE_LABELS).map(([k, v]) => (
+                    <label key={k} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedAuditTypes.includes(k)}
+                        onChange={() => toggle(selectedAuditTypes, setSelectedAuditTypes, k)}
+                      />
+                      <span>{v}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="label">Entity types you serve</label>
+                <div className="grid grid-cols-1 gap-1.5 mt-1">
+                  {Object.entries(ENTITY_TYPE_LABELS).map(([k, v]) => (
+                    <label key={k} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedEntityTypes.includes(k)}
+                        onChange={() => toggle(selectedEntityTypes, setSelectedEntityTypes, k)}
+                      />
+                      <span>{v}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 disabled:opacity-60">
                 {loading ? "Setting up…" : "Complete setup →"}

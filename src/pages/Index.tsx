@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { US_STATES, ENTITY_TYPE_LABELS } from "@/lib/utils";
+import { US_STATES, ENTITY_TYPE_LABELS, AUDIT_TYPE_LABELS } from "@/lib/utils";
 
 type Role = "entity" | "firm";
 
@@ -33,6 +33,12 @@ export default function SignupPage() {
   const [firmState, setFirmState] = useState("");
   const [licenseNum, setLicenseNum] = useState("");
   const [firmEmail, setFirmEmail] = useState("");
+  const [selectedAuditTypes, setSelectedAuditTypes] = useState<string[]>([]);
+  const [selectedEntityTypes, setSelectedEntityTypes] = useState<string[]>([]);
+
+  function toggle(list: string[], setList: (v: string[]) => void, value: string) {
+    setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+  }
 
   // If already logged in, send to dashboard
   useEffect(() => {
@@ -130,6 +136,18 @@ export default function SignupPage() {
           await supabase.from("firm_licenses").insert({
             firm_id: firm.id, state: firmState, license_num: licenseNum,
           });
+        }
+        if (selectedAuditTypes.length > 0) {
+          const { error: atErr } = await supabase
+            .from("firm_audit_types")
+            .insert(selectedAuditTypes.map((t) => ({ firm_id: firm.id, audit_type: t as any })));
+          if (atErr) throw atErr;
+        }
+        if (selectedEntityTypes.length > 0) {
+          const { error: etErr } = await supabase
+            .from("firm_entity_types")
+            .insert(selectedEntityTypes.map((t) => ({ firm_id: firm.id, entity_type: t as any })));
+          if (etErr) throw etErr;
         }
       }
       navigate("/dashboard");
@@ -265,6 +283,36 @@ export default function SignupPage() {
               <div>
                 <label className="label">Firm contact email</label>
                 <input className="input" type="email" value={firmEmail} onChange={(e) => setFirmEmail(e.target.value)} placeholder="contact@yourfirm.com" />
+              </div>
+              <div>
+                <label className="label">Audit services offered</label>
+                <div className="grid grid-cols-1 gap-1.5 mt-1">
+                  {Object.entries(AUDIT_TYPE_LABELS).map(([k, v]) => (
+                    <label key={k} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedAuditTypes.includes(k)}
+                        onChange={() => toggle(selectedAuditTypes, setSelectedAuditTypes, k)}
+                      />
+                      <span>{v}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="label">Entity types you serve</label>
+                <div className="grid grid-cols-1 gap-1.5 mt-1">
+                  {Object.entries(ENTITY_TYPE_LABELS).map(([k, v]) => (
+                    <label key={k} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedEntityTypes.includes(k)}
+                        onChange={() => toggle(selectedEntityTypes, setSelectedEntityTypes, k)}
+                      />
+                      <span>{v}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
                 <strong>Platform fee:</strong> When you win a contract, a 5% fee on the total contract value is invoiced to your firm. Entities pay nothing extra.
