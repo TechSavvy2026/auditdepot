@@ -3,10 +3,13 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
+import Signup from "./pages/Signup.tsx"; // ✅ ADDED
 import CompleteSetup from "./pages/CompleteSetup.tsx";
 import NotFound from "./pages/NotFound.tsx";
+
 import DashboardLayout from "./components/dashboard/DashboardLayout.tsx";
 import DashboardHome from "./pages/dashboard/DashboardHome.tsx";
 import MyRfps from "./pages/dashboard/MyRfps.tsx";
@@ -29,11 +32,13 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* AUTH ROUTES */}
           <Route path="/" element={<Index />} />
           <Route path="/auth/login" element={<Login />} />
-          <Route path="/auth/signup" element={<Index />} />
+          <Route path="/auth/signup" element={<Signup />} /> {/* ✅ FIXED */}
           <Route path="/auth/complete-setup" element={<CompleteSetup />} />
 
+          {/* DASHBOARD ROUTES */}
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
             <Route path="rfps" element={<MyRfps />} />
@@ -51,7 +56,7 @@ const App = () => (
             <Route path="admin/billing" element={<ComingSoon title="Billing (admin)" />} />
           </Route>
 
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          {/* FALLBACK */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
